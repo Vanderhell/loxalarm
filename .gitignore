@@ -1,0 +1,19 @@
+# Build outputs
+/build/
+/out/
+/.cache/
+
+# Visual Studio / MSBuild
+/.vs/
+*.user
+*.suo
+*.vcxproj*
+*.filters
+*.VC.db
+
+# CLion / JetBrains
+/.idea/
+
+# macOS / Linux noise
+.DS_Store
+

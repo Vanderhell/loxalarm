@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          ver="${tag#v}"
+          out="dist/release-notes.md"
+          mkdir -p dist
+          awk -v ver="$ver" '
+            BEGIN { in=0 }
+            $0 ~ "^## \\[" ver "\\]" { in=1; print; next }
+            $0 ~ "^## \\[" && in==1 { exit }
+            in==1 { print }
+          ' CHANGELOG.md > "$out"
+          if ! grep -q "^## \\[$ver\\]" "$out"; then
+            echo "No CHANGELOG section for version $ver" >&2
+            exit 1
+          fi
+
+      - name: Create source bundles
+        run: |
+          mkdir -p dist
+          tar -czf dist/loxalarm-${GITHUB_REF_NAME}.tar.gz \
+            include docs examples tests CMakeLists.txt README.md LICENSE CHANGELOG.md \
+            CONTRIBUTING.md SECURITY.md .editorconfig .gitattributes .gitignore
+          zip -r dist/loxalarm-${GITHUB_REF_NAME}.zip \
+            include docs examples tests CMakeLists.txt README.md LICENSE CHANGELOG.md \
+            CONTRIBUTING.md SECURITY.md .editorconfig .gitattributes .gitignore
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: dist/release-notes.md
+          files: |
+            dist/loxalarm-${{ github.ref_name }}.tar.gz
+            dist/loxalarm-${{ github.ref_name }}.zip

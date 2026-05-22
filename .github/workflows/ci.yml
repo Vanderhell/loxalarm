@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build
+      - name: Build
+        run: cmake --build build --config Release
+      - name: Test
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ctest --test-dir build -C Release --output-on-failure
+          else
+            ctest --test-dir build --output-on-failure
+          fi
+        shell: bash
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure (clang + sanitizers)
+        env:
+          CC: clang
+        run: cmake -S . -B build-sanitize -DLOXALARM_ENABLE_SANITIZERS=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
+      - name: Build
+        run: cmake --build build-sanitize -j
+      - name: Test (ASan/UBSan)
+        run: ctest --test-dir build-sanitize --output-on-failure
+
+  header-selfcontained:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Header compile checks (clang)
+        run: |
+          cat > /tmp/header_check.c <<'EOF'
+          #include <loxalarm/loxalarm.h>
+          #include <loxalarm/loxalarm_single.h>
+          int main(void) { return 0; }
+          EOF
+          clang -Iinclude -std=c99 -Wall -Wextra -Wpedantic -Werror /tmp/header_check.c -o /tmp/header_check
+      - name: Header compile checks (gcc)
+        run: |
+          cat > /tmp/header_check.c <<'EOF'
+          #include <loxalarm/loxalarm.h>
+          int main(void) { return 0; }
+          EOF
+          gcc -Iinclude -std=c99 -Wall -Wextra -Wpedantic -Werror /tmp/header_check.c -o /tmp/header_check_gcc
