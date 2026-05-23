@@ -7,6 +7,14 @@ from v1.0.0 onwards; before that, the API may change without notice.
 ## [Unreleased]
 
 ### Added
+-
+
+### Changed
+-
+
+## [0.1.1] - 2026-05-23
+
+### Added
 - CMake install rules and package export (`loxalarmTargets.cmake`, `loxalarmConfig.cmake`, `loxalarmConfigVersion.cmake`).
 - CI install smoke test and `find_package` consumer smoke test.
 - Evidence docs: `docs/test-plan.md`, `docs/release-checklist.md`, `docs/evidence-matrix.md`.
