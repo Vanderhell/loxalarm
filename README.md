@@ -1,7 +1,7 @@
 # loxalarm
 
-[![CI](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/ci.yml)
-[![Release](https://github.com/OWNER/REPO/actions/workflows/release.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/release.yml)
+[![CI](https://github.com/Vanderhell/loxalarm/actions/workflows/ci.yml/badge.svg)](https://github.com/Vanderhell/loxalarm/actions/workflows/ci.yml)
+[![Release](https://github.com/Vanderhell/loxalarm/actions/workflows/release.yml/badge.svg)](https://github.com/Vanderhell/loxalarm/actions/workflows/release.yml)
 
 **Deterministic alarm-state core for embedded C firmware.**
 
