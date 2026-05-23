@@ -2,8 +2,15 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <loxalarm/loxalarm.h>
+
+static uint32_t g_seed = 0;
+static uint32_t g_iter = 0;
+static uint32_t g_op = 0;
+static uint32_t g_now_ms = 0;
+static lox_alarm_state_t g_state = LOX_ALARM_NORMAL;
 
 static uint32_t xorshift32(uint32_t *state) {
     uint32_t x = *state;
@@ -14,12 +21,35 @@ static uint32_t xorshift32(uint32_t *state) {
     return x;
 }
 
+static const char *op_name(uint32_t op) {
+    switch (op) {
+        case 0: return "update";
+        case 1: return "update";
+        case 2: return "update";
+        case 3: return "ack";
+        case 4: return "shelve";
+        case 5: return "unshelve";
+        case 6: return "enter_oos";
+        case 7: return "exit_oos";
+        case 8: return "reset";
+        case 9: return "snapshot_roundtrip";
+        default: return "unknown";
+    }
+}
+
 static void require_(bool ok, const char *msg) {
     if (!ok) {
-        fprintf(stderr, "FAIL fuzzlike: %s\n", msg);
-        /* non-zero exit is enough for CI */
+        fprintf(stderr,
+                "FAIL fuzzlike: seed=0x%08X iter=%u op=%u(%s) state=%d now_ms=%u: %s\n",
+                (unsigned)g_seed,
+                (unsigned)g_iter,
+                (unsigned)g_op,
+                op_name(g_op),
+                (int)g_state,
+                (unsigned)g_now_ms,
+                msg);
         fflush(stderr);
-        *(volatile int *)0 = 0; /* deliberate crash for fast signal */
+        exit(1);
     }
 }
 
@@ -64,6 +94,7 @@ static void snapshot_roundtrip_check(const lox_alarm_t *a, uint32_t now_ms) {
 int main(void) {
     /* Deterministic PRNG seed so failures are reproducible. */
     uint32_t rng = 0xC0FFEE42u;
+    g_seed = rng;
 
     const lox_alarm_config_t cfg = {
         .on_delay_ms = 2000,
@@ -80,8 +111,10 @@ int main(void) {
     bool condition = false;
 
     for (uint32_t i = 0; i < 200000; ++i) {
+        g_iter = i;
         uint32_t r = xorshift32(&rng);
         uint32_t op = r % 10u;
+        g_op = op;
 
         /* Mix in wrap-around windows occasionally. */
         if ((r & 0x3FFFu) == 0x1234u) {
@@ -137,10 +170,11 @@ int main(void) {
                 break;
         }
 
+        g_now_ms = now_ms;
+        g_state = a.state;
         invariant_check(&a);
     }
 
     printf("OK\n");
     return 0;
 }
-

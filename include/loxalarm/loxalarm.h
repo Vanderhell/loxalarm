@@ -139,6 +139,15 @@ static inline bool lox_alarm__is_init(const lox_alarm_t *a) {
     return a && a->initialised && a->cfg;
 }
 
+static inline bool lox_alarm__is_valid_state_u8(uint8_t v) {
+    return v == (uint8_t)LOX_ALARM_NORMAL ||
+           v == (uint8_t)LOX_ALARM_ACTIVE ||
+           v == (uint8_t)LOX_ALARM_LATCHED_RETURN ||
+           v == (uint8_t)LOX_ALARM_SHELVED ||
+           v == (uint8_t)LOX_ALARM_SUPPRESSED ||
+           v == (uint8_t)LOX_ALARM_OUT_OF_SERVICE;
+}
+
 static inline uint32_t lox_alarm__elapsed(uint32_t now_ms, uint32_t since_ms) {
     return (uint32_t)(now_ms - since_ms);
 }
@@ -369,6 +378,9 @@ static inline lox_err_t lox_alarm_set_out_of_service(lox_alarm_t *a, bool oos, u
     if (oos) {
         if (a->state == LOX_ALARM_OUT_OF_SERVICE) return LOX_OK;
         a->reason_flags |= LOX_REASON_OOS_ENTER;
+        /* Entering OOS must not leave shelving metadata active. */
+        a->shelve_expires_ms = 0;
+        a->shelve_resume_state = LOX_ALARM_ACTIVE;
         lox_alarm__enter_state(a, LOX_ALARM_OUT_OF_SERVICE, now_ms);
         return LOX_OK;
     }
@@ -466,17 +478,32 @@ static inline lox_err_t lox_alarm_snapshot_load(lox_alarm_t *a,
                                                uint32_t now_ms) {
     if (!a || !cfg || !snap) return LOX_ERR_INVALID_ARG;
     if (snap->version != 1) return LOX_ERR_INVALID_ARG;
+    if (!lox_alarm__is_valid_state_u8(snap->state)) return LOX_ERR_INVALID_ARG;
+    if (!lox_alarm__is_valid_state_u8(snap->shelve_resume_state)) return LOX_ERR_INVALID_ARG;
+
+    lox_alarm_state_t snap_state = (lox_alarm_state_t)snap->state;
+    lox_alarm_state_t snap_resume = (lox_alarm_state_t)snap->shelve_resume_state;
+    if (snap_state == LOX_ALARM_SHELVED) {
+        if (snap_resume != LOX_ALARM_ACTIVE && snap_resume != LOX_ALARM_LATCHED_RETURN) {
+            return LOX_ERR_INVALID_ARG;
+        }
+    }
 
     *a = (lox_alarm_t){0};
     a->cfg = cfg;
     a->initialised = true;
-    a->state = (lox_alarm_state_t)snap->state;
+    a->state = snap_state;
     a->ack_id = snap->ack_id;
     a->activation_count = snap->activation_count;
     a->shelve_count = snap->shelve_count;
     a->state_entered_ms = snap->state_entered_ms;
-    a->shelve_expires_ms = snap->shelve_expires_ms;
-    a->shelve_resume_state = (lox_alarm_state_t)snap->shelve_resume_state;
+    if (a->state == LOX_ALARM_SHELVED) {
+        a->shelve_expires_ms = snap->shelve_expires_ms;
+        a->shelve_resume_state = snap_resume;
+    } else {
+        a->shelve_expires_ms = 0;
+        a->shelve_resume_state = LOX_ALARM_ACTIVE;
+    }
 
     /* On restore, the condition is unknown until the caller starts updating. */
     a->last_condition = false;

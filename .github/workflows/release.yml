@@ -36,11 +36,20 @@ jobs:
         run: |
           mkdir -p dist
           tar -czf dist/loxalarm-${GITHUB_REF_NAME}.tar.gz \
-            include docs examples tests CMakeLists.txt README.md LICENSE CHANGELOG.md \
+            cmake include docs examples tests CMakeLists.txt README.md LICENSE CHANGELOG.md \
             CONTRIBUTING.md SECURITY.md .editorconfig .gitattributes .gitignore
           zip -r dist/loxalarm-${GITHUB_REF_NAME}.zip \
-            include docs examples tests CMakeLists.txt README.md LICENSE CHANGELOG.md \
+            cmake include docs examples tests CMakeLists.txt README.md LICENSE CHANGELOG.md \
             CONTRIBUTING.md SECURITY.md .editorconfig .gitattributes .gitignore
+
+      - name: Build + test + install bundle
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+          cmake --install build --prefix dist/install
+          tar -czf dist/loxalarm-${GITHUB_REF_NAME}-install.tar.gz -C dist/install .
+          (cd dist/install && zip -r ../loxalarm-${GITHUB_REF_NAME}-install.zip .)
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -49,3 +58,5 @@ jobs:
           files: |
             dist/loxalarm-${{ github.ref_name }}.tar.gz
             dist/loxalarm-${{ github.ref_name }}.zip
+            dist/loxalarm-${{ github.ref_name }}-install.tar.gz
+            dist/loxalarm-${{ github.ref_name }}-install.zip

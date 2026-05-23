@@ -7,11 +7,18 @@ from v1.0.0 onwards; before that, the API may change without notice.
 ## [Unreleased]
 
 ### Added
--
+- CMake install rules and package export (`loxalarmTargets.cmake`, `loxalarmConfig.cmake`, `loxalarmConfigVersion.cmake`).
+- CI install smoke test and `find_package` consumer smoke test.
+- Evidence docs: `docs/test-plan.md`, `docs/release-checklist.md`, `docs/evidence-matrix.md`.
 
-### Not yet
-- libFuzzer harness.
-- Cortex-M0+ memory profiling.
+### Changed
+- README no longer claims hysteresis is implemented in the alarm core; hysteresis is documented as upstream condition logic.
+- Snapshot load validation hardened (version/state/resume validation; shelving metadata handling).
+- Entering OUT_OF_SERVICE now clears shelving metadata.
+- Unit tests expanded for snapshot validation edge cases, overflow handling, one-shot flags, and `needs_attention`/NULL helpers.
+- Fuzz-like test now fails deterministically with non-zero exit and prints failure context instead of crashing.
+- Release workflow bundles `cmake/` and creates an install-tree archive.
+- SECURITY policy updated to prefer private disclosure.
 
 ## [0.1.0] - 2026-05-22
 

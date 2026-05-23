@@ -92,6 +92,173 @@ static void S20_oos_exit_resets_to_normal(void) {
     EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_NORMAL);
 }
 
+static void S21_invalid_snapshot_state_rejected(void) {
+    const char *SC = "S21";
+    const lox_alarm_config_t cfg = {0};
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_snapshot_t snap;
+    memset(&snap, 0, sizeof(snap));
+    snap.version = 1;
+    snap.state = 250;
+    snap.shelve_resume_state = (uint8_t)LOX_ALARM_ACTIVE;
+    EXPECT_EQ_I32(SC, lox_alarm_snapshot_load(&a, &cfg, &snap, 0), LOX_ERR_INVALID_ARG);
+}
+
+static void S22_invalid_snapshot_shelve_resume_state_rejected(void) {
+    const char *SC = "S22";
+    const lox_alarm_config_t cfg = {0};
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_snapshot_t snap;
+    memset(&snap, 0, sizeof(snap));
+    snap.version = 1;
+    snap.state = (uint8_t)LOX_ALARM_NORMAL;
+    snap.shelve_resume_state = 250;
+    EXPECT_EQ_I32(SC, lox_alarm_snapshot_load(&a, &cfg, &snap, 0), LOX_ERR_INVALID_ARG);
+}
+
+static void S23_shelved_snapshot_invalid_resume_state_rejected(void) {
+    const char *SC = "S23";
+    const lox_alarm_config_t cfg = {0};
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_snapshot_t snap;
+    memset(&snap, 0, sizeof(snap));
+    snap.version = 1;
+    snap.state = (uint8_t)LOX_ALARM_SHELVED;
+    snap.shelve_resume_state = (uint8_t)LOX_ALARM_NORMAL;
+    snap.shelve_expires_ms = 100;
+    EXPECT_EQ_I32(SC, lox_alarm_snapshot_load(&a, &cfg, &snap, 0), LOX_ERR_INVALID_ARG);
+}
+
+static void S24_non_shelved_snapshot_does_not_restore_shelve_metadata(void) {
+    const char *SC = "S24";
+    const lox_alarm_config_t cfg = {0};
+
+    lox_alarm_snapshot_t snap;
+    memset(&snap, 0, sizeof(snap));
+    snap.version = 1;
+    snap.state = (uint8_t)LOX_ALARM_ACTIVE;
+    snap.shelve_resume_state = (uint8_t)LOX_ALARM_ACTIVE;
+    snap.shelve_expires_ms = 1234;
+
+    lox_alarm_t a;
+    EXPECT_EQ_I32(SC, lox_alarm_snapshot_load(&a, &cfg, &snap, 0), LOX_OK);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
+    EXPECT_EQ_U32(SC, a.shelve_expires_ms, 0u);
+}
+
+static void S25_oos_from_shelved_clears_shelving_metadata(void) {
+    const char *SC = "S25";
+    const lox_alarm_config_t cfg = { .on_delay_ms = 0, .shelvable = true, .max_shelve_ms = 600000 };
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_update(&a, true, 0);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
+
+    EXPECT_EQ_I32(SC, lox_alarm_shelve(&a, 1000, 10, 1), LOX_OK);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_SHELVED);
+    EXPECT_TRUE(SC, a.shelve_expires_ms != 0u);
+
+    EXPECT_EQ_I32(SC, lox_alarm_set_out_of_service(&a, true, 20), LOX_OK);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_OUT_OF_SERVICE);
+    EXPECT_EQ_U32(SC, a.shelve_expires_ms, 0u);
+
+    EXPECT_EQ_I32(SC, lox_alarm_set_out_of_service(&a, false, 30), LOX_OK);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_NORMAL);
+}
+
+static void S26_just_acked_is_one_shot(void) {
+    const char *SC = "S26";
+    const lox_alarm_config_t cfg = { .on_delay_ms = 0, .off_delay_ms = 0, .latched = true };
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_update(&a, true, 0);
+    lox_alarm_update(&a, false, 1);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_LATCHED_RETURN);
+
+    EXPECT_EQ_I32(SC, lox_alarm_ack(&a, 2, 7), LOX_OK);
+    EXPECT_TRUE(SC, lox_alarm_just_acked(&a));
+    EXPECT_TRUE(SC, !lox_alarm_just_acked(&a));
+}
+
+static void S27_just_shelved_is_one_shot(void) {
+    const char *SC = "S27";
+    const lox_alarm_config_t cfg = { .on_delay_ms = 0, .shelvable = true, .max_shelve_ms = 1000 };
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_update(&a, true, 0);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
+
+    EXPECT_EQ_I32(SC, lox_alarm_shelve(&a, 1000, 1, 0), LOX_OK);
+    EXPECT_TRUE(SC, lox_alarm_just_shelved(&a));
+    EXPECT_TRUE(SC, !lox_alarm_just_shelved(&a));
+}
+
+static void S28_shelve_expiry_sets_reason_flag(void) {
+    const char *SC = "S28";
+    const lox_alarm_config_t cfg = { .on_delay_ms = 0, .shelvable = true, .max_shelve_ms = 1000 };
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    lox_alarm_update(&a, true, 0);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
+
+    EXPECT_EQ_I32(SC, lox_alarm_shelve(&a, 10, 1, 0), LOX_OK);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_SHELVED);
+
+    lox_alarm_update(&a, true, 50);
+    uint32_t flags = lox_alarm_drain_reason_flags(&a);
+    EXPECT_TRUE(SC, (flags & LOX_REASON_SHELVE_EXPIRE) != 0u);
+}
+
+static void S29_counter_overflow_returns_overflow(void) {
+    const char *SC = "S29";
+    const lox_alarm_config_t cfg = { .on_delay_ms = 0, .shelvable = true, .max_shelve_ms = 1000 };
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+
+    a.activation_count = UINT32_MAX;
+    EXPECT_EQ_I32(SC, lox_alarm_update(&a, true, 0), LOX_ERR_OVERFLOW);
+
+    /* Reset back to NORMAL for shelve test. */
+    lox_alarm_init(&a, &cfg);
+    a.shelve_count = UINT32_MAX;
+    lox_alarm_update(&a, true, 0);
+    EXPECT_EQ_I32(SC, lox_alarm_shelve(&a, 1, 1, 0), LOX_ERR_OVERFLOW);
+}
+
+static void S30_needs_attention_and_null_helpers(void) {
+    const char *SC = "S30";
+
+    EXPECT_EQ_I32(SC, lox_alarm_state(NULL), LOX_ALARM_NORMAL);
+    EXPECT_EQ_U32(SC, lox_alarm_drain_reason_flags(NULL), 0u);
+
+    const lox_alarm_config_t cfg = { .on_delay_ms = 0, .shelvable = true, .max_shelve_ms = 1000 };
+    lox_alarm_t a;
+    lox_alarm_init(&a, &cfg);
+    EXPECT_TRUE(SC, !lox_alarm_needs_attention(&a));
+
+    lox_alarm_update(&a, true, 0);
+    EXPECT_TRUE(SC, lox_alarm_needs_attention(&a));
+
+    EXPECT_EQ_I32(SC, lox_alarm_shelve(&a, 1000, 1, 0), LOX_OK);
+    EXPECT_TRUE(SC, !lox_alarm_needs_attention(&a));
+
+    a.state = LOX_ALARM_SUPPRESSED;
+    EXPECT_TRUE(SC, !lox_alarm_needs_attention(&a));
+
+    lox_alarm_set_out_of_service(&a, true, 2);
+    EXPECT_TRUE(SC, !lox_alarm_needs_attention(&a));
+}
+
 static void S01_spike_below_on_delay(void) {
     const char *SC = "S01";
     const lox_alarm_config_t cfg = { .on_delay_ms = 2000, .off_delay_ms = 0, .latched = false };
@@ -369,6 +536,16 @@ int main(void) {
     S18_unshelve_wrong_state_rejected();
     S19_snapshot_version_mismatch_rejected();
     S20_oos_exit_resets_to_normal();
+    S21_invalid_snapshot_state_rejected();
+    S22_invalid_snapshot_shelve_resume_state_rejected();
+    S23_shelved_snapshot_invalid_resume_state_rejected();
+    S24_non_shelved_snapshot_does_not_restore_shelve_metadata();
+    S25_oos_from_shelved_clears_shelving_metadata();
+    S26_just_acked_is_one_shot();
+    S27_just_shelved_is_one_shot();
+    S28_shelve_expiry_sets_reason_flag();
+    S29_counter_overflow_returns_overflow();
+    S30_needs_attention_and_null_helpers();
 
     if (g_failures == 0) {
         printf("OK\n");

@@ -6,8 +6,8 @@
 **Deterministic alarm-state core for embedded C firmware.**
 
 `loxalarm` is a small, heap-free **C99** library that implements the runtime
-state model of a process alarm: on-delay, off-delay, hysteresis, latch,
-acknowledge, shelving, and reason flags.
+state model of a process alarm: on-delay, off-delay, latch, acknowledge,
+shelving, and reason flags.
 
 It is designed for MCU firmware that needs PLC-style alarm semantics
 (latch-until-acked, shelve-without-losing-events, chattering suppression)
@@ -149,13 +149,17 @@ if (pressure > LIMIT) {
 That snippet has at least five real problems:
 
 - no on-delay (chattering at threshold causes alarm flap)
-- no hysteresis (no separate clear threshold)
+- no clear separation between signal logic and alarm semantics
 - no latch (alarm vanishes before operator sees it)
 - no acknowledge (no concept of operator-aware reset)
 - no shelve (cannot temporarily silence during maintenance without losing
   the underlying state)
 
 `loxalarm` provides one tested, predictable implementation of all of these.
+
+Note: `loxalarm` consumes a boolean condition; if you need hysteresis, implement
+it in your signal/threshold logic before calling `lox_alarm_update()` (see
+`docs/state-model.md`).
 
 ## Comparison
 

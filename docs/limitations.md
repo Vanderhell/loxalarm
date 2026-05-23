@@ -114,9 +114,15 @@ write a wrapper that exposes the OPC UA node types over it.
 ## Known issues / TODO before v1.0
 
 - Per-instance memory footprint not yet profiled against M0+ targets.
-- Snapshot format is v1, designed to be forward-compatible but not yet
-  exercised across version boundaries.
-- No fuzzing harness yet for the update loop.
-- No formal test for clock-wrap behaviour near the boundary.
-- API for SUPPRESSED is minimal; design intent is to expose it more
-  cleanly before v1.0.
+- Snapshot format is v1. The library validates and restores snapshots for
+  this version, but cross-version migration/validation policy is still the
+  caller's responsibility if you persist snapshots across library upgrades.
+- Snapshot integrity (bit flips, torn writes) is not checked by `loxalarm`.
+  If you store snapshots in flash/EEPROM/NVRAM, add integrity protection in
+  your persistence backend (e.g. CRC, redundancy, journaling).
+- The repository includes a deterministic fuzz-like invariant test for the
+  update loop, but it is not a coverage-guided fuzzer.
+- The repository includes a unit test that exercises `uint32_t` clock wrap at
+  the boundary.
+- API for SUPPRESSED is minimal (reserved enum value; enter/exit is managed
+  above `loxalarm` in v0.1).

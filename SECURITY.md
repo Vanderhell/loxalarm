@@ -3,9 +3,15 @@
 This is an embedded-focused state-machine library with no network I/O and no
 parsing of untrusted input.
 
-If you believe you have found a security issue, please open a GitHub issue with:
+If you believe you have found a security issue, please **do not** post
+potentially sensitive details in a public GitHub issue.
 
-- a minimal reproducer,
-- expected vs actual behavior,
-- compiler / target details.
+## Reporting
 
+- Preferred: use **GitHub Security Advisories** (“Report a vulnerability”) if
+  available for this repository.
+- Otherwise: contact the maintainer privately (for example via GitHub direct
+  message) to coordinate disclosure.
+
+Include a minimal reproducer, expected vs actual behavior, and compiler/target
+details.
