@@ -137,6 +137,9 @@ static void S03_off_delay_before_clearing(void) {
     EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
 
     lox_alarm_update(&a, false, 5000);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
+
+    lox_alarm_update(&a, false, 6000);
     EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_NORMAL);
     EXPECT_TRUE(SC, lox_alarm_just_returned(&a));
     EXPECT_TRUE(SC, !lox_alarm_just_returned(&a));
@@ -198,6 +201,9 @@ static void S07_reactivation_while_latched_return(void) {
     EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_LATCHED_RETURN);
 
     lox_alarm_update(&a, true, 4100);
+    EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_LATCHED_RETURN);
+
+    lox_alarm_update(&a, true, 6100);
     EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_ACTIVE);
     EXPECT_EQ_U32(SC, a.activation_count, 2u);
 }
@@ -321,7 +327,7 @@ static void S14_reset_preserves_lifetime_counters(void) {
 
     lox_alarm_reset(&a, 2000);
     EXPECT_EQ_I32(SC, lox_alarm_state(&a), LOX_ALARM_NORMAL);
-    EXPECT_EQ_U32(SC, a.activation_count, 7u);
+    EXPECT_EQ_U32(SC, a.activation_count, 8u);
 }
 
 static void S15_reason_flags_accumulate_between_drains(void) {
