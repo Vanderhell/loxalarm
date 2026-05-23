@@ -22,10 +22,10 @@ jobs:
           out="dist/release-notes.md"
           mkdir -p dist
           awk -v ver="$ver" '
-            BEGIN { in=0 }
-            $0 ~ "^## \\[" ver "\\]" { in=1; print; next }
-            $0 ~ "^## \\[" && in==1 { exit }
-            in==1 { print }
+            BEGIN { in_section=0 }
+            $0 ~ "^## \\[" ver "\\]" { in_section=1; print; next }
+            $0 ~ "^## \\[" && in_section==1 { exit }
+            in_section==1 { print }
           ' CHANGELOG.md > "$out"
           if ! grep -q "^## \\[$ver\\]" "$out"; then
             echo "No CHANGELOG section for version $ver" >&2
