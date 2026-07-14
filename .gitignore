@@ -17,3 +17,8 @@
 # macOS / Linux noise
 .DS_Store
 
+/build-wsl-clang-debug
+/build-wsl-clang-release
+/build-wsl-gcc-debug
+/build-wsl-gcc-release
+/prompts

@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -340,7 +341,7 @@ static inline lox_alarm_status_t lox_alarm_init(lox_alarm_t *a, const lox_alarm_
         return r;
     }
 
-    *a = (lox_alarm_t){0};
+    memset(a, 0, sizeof(*a));
     a->cfg = cfg;
     a->state = LOX_ALARM_NORMAL;
     a->shelve_resume_state = LOX_ALARM_ACTIVE;
@@ -669,7 +670,7 @@ static inline lox_alarm_status_t lox_alarm_snapshot_load(lox_alarm_t *a,
         return r;
     }
 
-    *a = (lox_alarm_t){0};
+    memset(a, 0, sizeof(*a));
     a->cfg = cfg;
     a->initialised = true;
     a->state = (lox_alarm_state_t)snap->state;
@@ -814,7 +815,8 @@ static inline lox_alarm_status_t lox_alarm_snapshot_decode(lox_alarm_snapshot_t 
     uint8_t resume_state = *p++;
     uint8_t reserved0 = *p++;
     uint8_t reserved1 = *p++;
-    lox_alarm_snapshot_t tmp = {0};
+    lox_alarm_snapshot_t tmp;
+    memset(&tmp, 0, sizeof(tmp));
     tmp.schema_id = schema_id;
     tmp.flags = flags;
     tmp.state = state;
