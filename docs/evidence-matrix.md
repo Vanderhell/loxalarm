@@ -14,3 +14,11 @@ This document maps repository claims to in-repo evidence.
 | Snapshot decoder rejects corruption | Unit test `S11_snapshot_decoder_rejects_corruption` in `tests/test_loxalarm.c`. |
 | OOS freezes evaluation and returns to NORMAL | Unit test `S12_out_of_service_freezes_evaluation` in `tests/test_loxalarm.c`. |
 | Reset preserves lifetime counters | Unit test `S13_force_reset_preserves_lifetime_counters` in `tests/test_loxalarm.c`. |
+| GCC Debug / Release builds and tests passed | User-provided WSL verification. |
+| Clang Debug / Release builds and tests passed | User-provided WSL verification. |
+| Fuzz-like test passed | User-provided WSL verification. |
+| Examples build and run passed | User-provided WSL verification. |
+| Install/package smoke passed | User-provided WSL verification. |
+| External C `find_package` consumer passed | User-provided WSL verification. |
+| External C++ `find_package` consumer passed | User-provided WSL verification. |
+| `git diff --check` passed | User-provided WSL verification. |

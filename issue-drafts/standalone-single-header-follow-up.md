@@ -1,7 +1,7 @@
 # Standalone single-header claim still needs a final decision
 
 ## Classification
-INCOMPLETE
+DEFERRED / NON-BLOCKING
 
 ## Problem
 `loxalarm_single.h` now behaves as a compatibility include that forwards to `loxalarm.h`. That is honest, but it is not yet a truly standalone amalgamated distribution.

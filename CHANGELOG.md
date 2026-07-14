@@ -6,6 +6,8 @@ from v1.0.0 onwards; before that, the API may change without notice.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-07-14
+
 ### Added
 - Portable snapshot encode/decode helpers with caller-supplied schema IDs.
 - Clock-range validation and backward-jump rejection.

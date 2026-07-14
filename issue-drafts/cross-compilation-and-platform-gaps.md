@@ -1,10 +1,10 @@
 # Platform matrix gaps remain unverified
 
 ## Classification
-NOT VERIFIED
+DEFERRED / NON-BLOCKING
 
 ## Problem
-The local verification covered Windows host builds, install, and C/C++ consumers, but not the broader platform claims in the release prompts.
+The user-provided WSL verification covered host builds, install, and C/C++ consumers, but not the broader platform claims in the release prompts.
 
 ## Required evidence
 - Linux GCC and clang release builds and tests.

@@ -1,10 +1,10 @@
 # Sanitizers and static analysis not yet exercised in this workspace
 
 ## Classification
-NOT VERIFIED
+DEFERRED / NON-BLOCKING
 
 ## Problem
-The repository now has sanitizer-aware CI and stricter release checks, but I did not execute the sanitizer matrix or any static-analysis tools in this local session.
+The repository now has sanitizer-aware CI and stricter release checks, but sanitizer and static-analysis runs were not part of the user-provided WSL evidence.
 
 ## Required evidence
 - ASan/UBSan build and test run on a supported clang or gcc toolchain.

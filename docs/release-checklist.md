@@ -3,6 +3,7 @@
 - `CHANGELOG.md` contains a section for the tag version (for example `v0.1.0` -> `## [0.1.0]`).
 - Tag, header version macros, and `CMakeLists.txt` project version match exactly.
 - Public headers compile standalone (CI “header self-contained” job).
+- User-side WSL verification already passed for GCC/Clang Debug/Release builds and tests, fuzz-like test, examples, install/package, external C/C++ `find_package` consumers, and `git diff --check`.
 - Configure/build/test:
   - `cmake -S . -B build`
   - `cmake --build build --config Release`
@@ -16,3 +17,4 @@
   - `cmake --install build --prefix dist`
   - Consumer configure/build with `find_package(loxalarm CONFIG REQUIRED)` and `loxalarm::loxalarm`.
   - C++ consumer configure/build if the header is advertised as C++-clean.
+- Platform-specific matrices such as sanitizers, ARM cross-compile, macOS, MSVC, and hardware validation remain separate follow-ups unless explicitly promised by the release scope.

@@ -1,10 +1,10 @@
 # Release readiness still has unrun matrix entries
 
 ## Classification
-NOT VERIFIED
+DEFERRED / NON-BLOCKING
 
 ## Problem
-The core library, install tree, and C/C++ consumers pass locally, but the full release matrix and release workflow were not exercised end-to-end in this session.
+The core library, install tree, and C/C++ consumers are already covered by user-provided WSL evidence, but the full release matrix and release workflow were not exercised end-to-end in this session.
 
 ## Required evidence
 - Release workflow dry run or equivalent tag validation.
