@@ -28,7 +28,9 @@ static const lox_alarm_config_t pressure_cfg = {
 static lox_alarm_t pressure_alarm;
 
 int main(void) {
-    lox_alarm_init(&pressure_alarm, &pressure_cfg);
+    if (lox_alarm_init(&pressure_alarm, &pressure_cfg) != LOXALARM_OK) {
+        return 1;
+    }
 
     /* Pretend control loop. now_ms would come from your monotonic clock. */
     uint32_t now_ms = 0;
@@ -40,7 +42,9 @@ int main(void) {
         /* Pretend sensor goes high at t=5 s, stays high until t=20 s. */
         over_limit = (tick >= 5 && tick < 20);
 
-        lox_alarm_update(&pressure_alarm, over_limit, now_ms);
+        if (lox_alarm_update(&pressure_alarm, over_limit, now_ms) != LOXALARM_OK) {
+            return 2;
+        }
 
         if (lox_alarm_just_activated(&pressure_alarm)) {
             printf("[t=%us] ALARM ACTIVATED: %s\n",
@@ -67,5 +71,5 @@ int main(void) {
     printf("ack result: %d, state now: %d\n",
            r, lox_alarm_state(&pressure_alarm));
 
-    return 0;
+    return (r == LOXALARM_OK) ? 0 : 3;
 }

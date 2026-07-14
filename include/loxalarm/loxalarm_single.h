@@ -1,10 +1,9 @@
-/* Single-header distribution for loxalarm (v0.1).
+/* Compatibility include for loxalarm.
  *
- * In v0.1 the library is header-only, so this is an alias kept for the
- * documented include pattern.
+ * This header forwards to the public C99 API in loxalarm.h so projects can
+ * continue using the historical single-header include path.
  */
 #ifndef LOXALARM_SINGLE_H
 #define LOXALARM_SINGLE_H
 #include "loxalarm.h"
 #endif
-

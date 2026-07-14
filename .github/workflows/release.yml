@@ -14,6 +14,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify release version consistency
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          case "$tag" in
+            v[0-9]*.[0-9]*.[0-9]*) ;;
+            *)
+              echo "Tag must be strict vMAJOR.MINOR.PATCH" >&2
+              exit 1
+              ;;
+          esac
+          ver="${tag#v}"
+          cmake_ver=$(sed -n 's/^project(loxalarm VERSION \([0-9][0-9.]*\) LANGUAGES C)$/\1/p' CMakeLists.txt)
+          header_ver=$(awk '
+            $1 == "#define" && $2 == "LOXALARM_VERSION_MAJOR" { major = $3 }
+            $1 == "#define" && $2 == "LOXALARM_VERSION_MINOR" { minor = $3 }
+            $1 == "#define" && $2 == "LOXALARM_VERSION_PATCH" { patch = $3 }
+            END { printf("%s.%s.%s", major, minor, patch) }
+          ' include/loxalarm/loxalarm.h)
+          if [ "$ver" != "$cmake_ver" ] || [ "$ver" != "$header_ver" ]; then
+            echo "Version mismatch: tag=$ver cmake=$cmake_ver header=$header_ver" >&2
+            exit 1
+          fi
+
       - name: Extract release notes from CHANGELOG
         run: |
           set -euo pipefail

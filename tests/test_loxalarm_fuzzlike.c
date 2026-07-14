@@ -69,11 +69,13 @@ static void invariant_check(const lox_alarm_t *a) {
     require_(is_valid_state(a->state), "invalid state enum");
     if (a->state != LOX_ALARM_SHELVED) {
         require_(a->shelve_expires_ms == 0, "shelve_expires_ms nonzero while not SHELVED");
+        require_(!a->shelve_armed, "shelve_armed true while not SHELVED");
     }
     if (a->state == LOX_ALARM_SHELVED) {
         require_(a->shelve_resume_state == LOX_ALARM_ACTIVE ||
                  a->shelve_resume_state == LOX_ALARM_LATCHED_RETURN,
                  "shelve_resume_state must be ACTIVE or LATCHED_RETURN");
+        require_(a->shelve_armed, "shelve_armed false while SHELVED");
     }
 }
 
@@ -144,7 +146,7 @@ int main(void) {
             }
             case 5: { /* unshelve */
                 now_ms += 1;
-                (void)lox_alarm_unshelve(&a, now_ms);
+                (void)lox_alarm_unshelve(&a, now_ms, (uint16_t)(r & 0xFFFFu));
                 break;
             }
             case 6: { /* enter OOS */

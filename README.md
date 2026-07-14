@@ -7,7 +7,7 @@
 
 `loxalarm` is a small, heap-free **C99** library that implements the runtime
 state model of a process alarm: on-delay, off-delay, latch, acknowledge,
-shelving, and reason flags.
+shelving, portable snapshots, and reason flags.
 
 It is designed for MCU firmware that needs PLC-style alarm semantics
 (latch-until-acked, shelve-without-losing-events, chattering suppression)
@@ -92,11 +92,13 @@ The lifecycle is modelled on the alarm states used by **ISA 18.2** and
 ## Design rules
 
 - **C99**, no compiler extensions.
-- **Single-header distribution** option (`loxalarm/loxalarm_single.h`).
+- **Compatibility single-header include** (`loxalarm/loxalarm_single.h`).
 - **No heap** - all state is caller-owned (`lox_alarm_t` on stack or in
   static memory).
 - **No floating point.** Time is `uint32_t` milliseconds, supplied by the
   caller.
+- **Clock contract.** Time is treated modulo `2^32`; unsupported backward
+  jumps larger than half the range are rejected.
 - **No global mutable state.** Every function takes the alarm pointer.
 - **No HW dependency.** Caller passes the current condition (bool) and the
   current monotonic time. Time source is your business.
@@ -184,7 +186,8 @@ it in your signal/threshold logic before calling `lox_alarm_update()` (see
 - **`microsh`** - exposes `alarm ack`, `alarm shelve`, `alarm list` commands.
 - **`nvlog` / `loxdb`** - optional persistence of the latched and shelved
   states across reboot. (`loxalarm` does not persist by itself; it offers
-  a snapshot/restore pair if persistence is wanted.)
+  in-memory snapshots plus portable byte encode/decode helpers if
+  persistence is wanted.)
 
 ## Building
 
@@ -197,7 +200,7 @@ Drop the `include/` directory into your project. There is nothing to link.
 #include "loxalarm/loxalarm_single.h"
 ```
 
-The implementation is header-only (`static inline`) in v0.1.
+The implementation is header-only (`static inline`).
 
 ### CMake
 

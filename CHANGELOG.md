@@ -7,10 +7,14 @@ from v1.0.0 onwards; before that, the API may change without notice.
 ## [Unreleased]
 
 ### Added
--
+- Portable snapshot encode/decode helpers with caller-supplied schema IDs.
+- Clock-range validation and backward-jump rejection.
 
 ### Changed
--
+- Saturating diagnostic counters for activation, reactivation, shelving, and acknowledgements.
+- Snapshot persistence now uses explicit wire metadata and reserved-field validation.
+- Public version macros and CMake project version advanced to 0.1.2.
+- CI and release checks now cover C++ header consumption and version consistency.
 
 ## [0.1.1] - 2026-05-23
 

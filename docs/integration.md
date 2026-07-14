@@ -89,22 +89,26 @@ if (reasons != 0) {
 ## With `nvlog` / `loxdb` (persistence across reboot)
 
 `loxalarm` does not write to non-volatile storage. You decide when to
-snapshot:
+snapshot and which schema ID to use:
 
 ```c
 /* on every transition, or on a slow timer */
 lox_alarm_snapshot_t snap;
-if (lox_alarm_snapshot_save(&pressure_high, &snap) == LOX_OK) {
-    nvlog_append(&store, NV_KEY_PRESSURE_ALARM,
-                 &snap, sizeof(snap));
+uint8_t wire[LOXALARM_SNAPSHOT_WIRE_SIZE];
+if (lox_alarm_snapshot_save(&pressure_high, &snap) == LOXALARM_OK) {
+    if (lox_alarm_snapshot_encode(&snap, 17u, wire, sizeof(wire), NULL) == LOXALARM_OK) {
+        nvlog_append(&store, NV_KEY_PRESSURE_ALARM, wire, sizeof(wire));
+    }
 }
 
 /* on boot */
+uint8_t wire[LOXALARM_SNAPSHOT_WIRE_SIZE];
+size_t n = sizeof(wire);
 lox_alarm_snapshot_t snap;
-size_t n = sizeof(snap);
-if (nvlog_read_latest(&store, NV_KEY_PRESSURE_ALARM, &snap, &n) == 0) {
-    lox_alarm_snapshot_load(&pressure_high, &cfg_pressure,
-                            &snap, now_ms);
+uint32_t schema_id = 0;
+if (nvlog_read_latest(&store, NV_KEY_PRESSURE_ALARM, wire, &n) == 0 &&
+    lox_alarm_snapshot_decode(&snap, &schema_id, wire, n) == LOXALARM_OK) {
+    lox_alarm_snapshot_load(&pressure_high, &cfg_pressure, &snap, now_ms);
 } else {
     lox_alarm_init(&pressure_high, &cfg_pressure);
 }

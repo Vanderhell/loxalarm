@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Configure
-        run: cmake -S . -B build
+        run: cmake -S . -B build -DLOXALARM_WARNINGS_AS_ERRORS=ON
       - name: Build
         run: cmake --build build --config Release
       - name: Test
@@ -54,6 +54,31 @@ jobs:
             cmake --build consumer-build
           fi
         shell: bash
+      - name: Package consumer smoke (C++)
+        run: |
+          mkdir -p consumer-cxx
+          cat > consumer-cxx/CMakeLists.txt <<'EOF'
+          cmake_minimum_required(VERSION 3.20)
+          project(loxalarm_consumer_cxx LANGUAGES CXX)
+          find_package(loxalarm CONFIG REQUIRED)
+          add_executable(consumer-cxx main.cpp)
+          target_link_libraries(consumer-cxx PRIVATE loxalarm::loxalarm)
+          EOF
+          cat > consumer-cxx/main.cpp <<'EOF'
+          #include <loxalarm/loxalarm.h>
+          int main() {
+            lox_alarm_t alarm{};
+            (void)alarm;
+            return 0;
+          }
+          EOF
+          cmake -S consumer-cxx -B consumer-cxx-build -DCMAKE_PREFIX_PATH="$PWD/dist"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            cmake --build consumer-cxx-build --config Release
+          else
+            cmake --build consumer-cxx-build
+          fi
+        shell: bash
 
   sanitizers:
     runs-on: ubuntu-latest
@@ -80,6 +105,12 @@ jobs:
           int main(void) { return 0; }
           EOF
           clang -Iinclude -std=c99 -Wall -Wextra -Wpedantic -Werror /tmp/header_check.c -o /tmp/header_check
+          cat > /tmp/header_check.cpp <<'EOF'
+          #include <loxalarm/loxalarm.h>
+          #include <loxalarm/loxalarm_single.h>
+          int main() { lox_alarm_t alarm{}; (void)alarm; return 0; }
+          EOF
+          clang++ -Iinclude -std=c++17 -Wall -Wextra -Wpedantic -Werror /tmp/header_check.cpp -o /tmp/header_check_cxx
       - name: Header compile checks (gcc)
         run: |
           cat > /tmp/header_check.c <<'EOF'

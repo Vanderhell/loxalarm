@@ -39,8 +39,8 @@ Modbus, no email. Use the `just_*` flags or
 ## No persistence
 
 `loxalarm` does not write to flash, EEPROM, or NVRAM by itself. It
-provides a snapshot/load API; you decide when to call it and where to
-store the result.
+provides in-memory snapshots plus portable byte encode/decode helpers;
+you decide when to call them and where to store the result.
 
 If you do not persist and the device reboots while an alarm is in
 LATCHED_RETURN, the alarm will not be visible after reboot. This is
@@ -74,15 +74,12 @@ manually using `state_entered_ms`.
 ## Time source: caller's responsibility
 
 `loxalarm` does not read a clock. You pass `now_ms` to every call. If
-your clock jumps (NTP step, RTC correction), behaviour is undefined for
-that update. Skip the update during a clock jump or call
-`lox_alarm_reset()`.
-
-Monotonic milliseconds are required. A wall-clock that can go backwards
-will misbehave.
+your clock jumps backwards by more than half the `uint32_t` range, the
+call is rejected. Use a monotonic millisecond counter.
 
 `uint32_t` ms wraps at ~49.7 days. `loxalarm` handles wrap correctly
-provided no single delay exceeds 24.85 days (half the wrap window).
+provided no single delay exceeds 24.85 days (half the wrap window), and
+configuration validation rejects unsupported ranges.
 
 ## Re-entrancy: per-instance
 
@@ -114,9 +111,9 @@ write a wrapper that exposes the OPC UA node types over it.
 ## Known issues / TODO before v1.0
 
 - Per-instance memory footprint not yet profiled against M0+ targets.
-- Snapshot format is v1. The library validates and restores snapshots for
-  this version, but cross-version migration/validation policy is still the
-  caller's responsibility if you persist snapshots across library upgrades.
+- Snapshot format uses an explicit wire header and caller-supplied schema ID.
+  Cross-version migration/validation policy is still the caller's
+  responsibility if you persist snapshots across library upgrades.
 - Snapshot integrity (bit flips, torn writes) is not checked by `loxalarm`.
   If you store snapshots in flash/EEPROM/NVRAM, add integrity protection in
   your persistence backend (e.g. CRC, redundancy, journaling).
@@ -124,5 +121,4 @@ write a wrapper that exposes the OPC UA node types over it.
   update loop, but it is not a coverage-guided fuzzer.
 - The repository includes a unit test that exercises `uint32_t` clock wrap at
   the boundary.
-- API for SUPPRESSED is minimal (reserved enum value; enter/exit is managed
-  above `loxalarm` in v0.1).
+- API for SUPPRESSED is absent; it remains a reserved enum value only.

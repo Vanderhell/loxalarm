@@ -2,7 +2,8 @@
 
 `loxalarm` implements a runtime subset of the alarm state model defined by
 **ISA 18.2 (Management of Alarm Systems for the Process Industries)** and
-**OPC UA Part 9 (Alarms & Conditions)**.
+**OPC UA Part 9 (Alarms & Conditions)**. It uses that vocabulary, but it is
+not a standards-conformance claim.
 
 This document describes exactly which states exist, when transitions
 happen, and what the operator-facing semantics are.
@@ -47,16 +48,18 @@ happen, and what the operator-facing semantics are.
 
 ### From SUPPRESSED
 
-`SUPPRESSED` is reserved in v0.1 (it exists as an enum value for forward
-compatibility), but the core does not currently provide an API to enter or
-exit SUPPRESSED. If you need suppression today, implement it above `loxalarm`
-by gating notifications or by not calling `lox_alarm_update()` for suppressed
-alarms.
+`SUPPRESSED` is present as a reserved enum value, but the core does not
+provide an API to enter or exit it. If you need suppression today, implement
+it above `loxalarm` by gating notifications or by not calling
+`lox_alarm_update()` for suppressed alarms.
 
 ### From OUT_OF_SERVICE
 
 - -> `NORMAL` when `lox_alarm_set_out_of_service(a, false)` is called.
 - While OOS, `lox_alarm_update()` is a no-op for condition tracking.
+
+`lox_alarm_reset()` is a force reset: it clears the live state back to
+`NORMAL` without discarding lifetime counters.
 
 ## Why on-delay and off-delay are not symmetrical
 

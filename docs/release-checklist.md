@@ -1,6 +1,7 @@
 # loxalarm - Release checklist
 
 - `CHANGELOG.md` contains a section for the tag version (for example `v0.1.0` -> `## [0.1.0]`).
+- Tag, header version macros, and `CMakeLists.txt` project version match exactly.
 - Public headers compile standalone (CI “header self-contained” job).
 - Configure/build/test:
   - `cmake -S . -B build`
@@ -14,4 +15,4 @@
 - Install/package smoke:
   - `cmake --install build --prefix dist`
   - Consumer configure/build with `find_package(loxalarm CONFIG REQUIRED)` and `loxalarm::loxalarm`.
-
+  - C++ consumer configure/build if the header is advertised as C++-clean.

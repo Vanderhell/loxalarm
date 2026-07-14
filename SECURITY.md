@@ -1,7 +1,8 @@
 # Security policy
 
-This is an embedded-focused state-machine library with no network I/O and no
-parsing of untrusted input.
+This is an embedded-focused state-machine library with no network I/O. It
+does parse portable snapshot bytes, but the decoder is strict about size,
+version, reserved fields, and state compatibility.
 
 If you believe you have found a security issue, please **do not** post
 potentially sensitive details in a public GitHub issue.

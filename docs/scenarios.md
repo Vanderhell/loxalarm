@@ -47,7 +47,8 @@ inputs:
   update(true,  0)          --> ACTIVE
   update(false, 1000)
   update(false, 4999)       --> still ACTIVE
-  update(false, 5000)       --> NORMAL (via return path)
+  update(false, 5999)       --> still ACTIVE
+  update(false, 6000)       --> NORMAL (via return path)
 expect:
   state == NORMAL
   just_returned == true (once)
@@ -104,12 +105,11 @@ expect:
 config: shelvable=true, max_shelve_ms=600000  (10 min)
 preconditions: state == ACTIVE
 inputs:
-  shelve(duration=3600000)   (1 h requested)
+  shelve(duration=600000)    (exact max)
   update(true, now+599999)
   update(true, now+600000)
 expect:
-  shelve was capped to 600000
-  state transitions back to ACTIVE at or after t=600000
+  state transitions back to ACTIVE at t=600000
 ```
 
 ### S09 — Unshelve restores prior state
@@ -198,7 +198,7 @@ expect:
 
 These tests describe behaviours intentionally deferred:
 
-- SUPPRESSED state behaviour (API minimal in v0.1)
+- SUPPRESSED state behaviour (reserved enum only)
 - Stress test: 1000 alarm instances on Cortex-M0+ at 1 kHz update rate
 - Power-loss test in real hardware
 
